@@ -4,7 +4,7 @@
   <img src="docs/assets/id-mask-toolkit-banner.svg" alt="ARCHVIZ ID Mask Toolkit — Color ID to production masks for ComfyUI" width="100%" />
 </p>
 
-**Status: LAB**
+**Status: PRODUCTION CANDIDATE · real ComfyUI runtime validated**
 
 A small ComfyUI toolkit for deterministic masking from Color ID / Material ID / Object ID passes used in architectural visualization.
 
