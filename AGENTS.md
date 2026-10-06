@@ -23,7 +23,18 @@ Current LAB nodes:
 INSPECT → UNDERSTAND → PLAN → CHANGE → VERIFY → DOCUMENT → REPORT.
 
 ## Status
-Until a real ComfyUI runtime test passes on synthetic and Corona ID passes, the toolkit remains **LAB**.
+Current status: **PRODUCTION CANDIDATE**.
+
+Verified in the target ComfyUI runtime:
+- synthetic stress-test workflow;
+- real architectural ID pass;
+- palette picking;
+- single and grouped masks;
+- rename/delete propagation;
+- workflow persistence;
+- Invert and tolerance behavior.
+
+Do not promote to PRODUCTION until the full ARCHVIZ material workflow integration test passes.
 
 
 ## Pre-runtime verification rule
