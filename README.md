@@ -65,6 +65,8 @@ Palette schema:
 
 The serialized palette widget is the workflow truth source. Browser-only state is not used as the production source of truth.
 
+The picker and backend intentionally operate in the same **8-bit RGB domain (0..255)**. This keeps the clicked preview color and backend exact-match behavior deterministic, including when an upstream image originally had higher channel precision.
+
 ### ARCHVIZ · Mask From Palette
 
 Takes:
@@ -105,6 +107,8 @@ FACADE MASK
 
 Colors are matched independently and combined with logical OR. RGB values are never averaged together.
 
+An empty group is valid and returns an all-black mask (or all-white when `Invert` is enabled), so an unfinished group does not break the graph.
+
 ## Baseline mask algorithm
 
 For selected RGB `S` and source pixel `P`:
@@ -123,6 +127,12 @@ Invert = OFF
 ```
 
 Use PNG for production ID passes. JPEG compression may require a larger tolerance.
+
+## Connection behavior
+
+Palette consumers refresh when the palette is renamed, edited, or deleted. If a selected single slot is deleted, the consumer falls back to the first remaining palette slot. Group selections automatically drop deleted IDs.
+
+The frontend palette resolver follows upstream connections through reroute/pass-through nodes, so normal graph organization does not require a direct visual wire from the palette node to every consumer.
 
 ## Important design rule
 
