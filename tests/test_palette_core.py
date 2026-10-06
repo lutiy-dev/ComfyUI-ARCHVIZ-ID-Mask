@@ -37,6 +37,28 @@ class PaletteCoreTests(unittest.TestCase):
         ]}
         self.assertEqual([x["id"] for x in find_colors(raw, ["b", "a"])], ["b", "a"])
 
+    def test_large_palette_roundtrip(self):
+        raw = {
+            "version": 1,
+            "colors": [
+                {"id": f"id-{i}", "name": f"Color {i}", "rgb": [i, i + 1, i + 2]}
+                for i in range(30)
+            ],
+        }
+        restored = normalize_palette(palette_to_json(raw))
+        self.assertEqual(len(restored["colors"]), 30)
+        self.assertEqual(restored["colors"][29]["id"], "id-29")
+
+    def test_unicode_names_survive_roundtrip(self):
+        raw = {"version": 1, "colors": [{"id": "facade", "name": "Фасад · арка", "rgb": [12, 34, 56]}]}
+        restored = normalize_palette(palette_to_json(raw))
+        self.assertEqual(restored["colors"][0]["name"], "Фасад · арка")
+
+    def test_missing_group_color_is_rejected(self):
+        raw = {"version": 1, "colors": [{"id": "a", "name": "A", "rgb": [1, 2, 3]}]}
+        with self.assertRaises(ValueError):
+            find_colors(raw, ["a", "missing"])
+
 
 if __name__ == "__main__":
     unittest.main()
