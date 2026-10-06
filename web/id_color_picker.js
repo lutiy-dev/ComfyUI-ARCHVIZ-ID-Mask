@@ -175,7 +175,7 @@ function createPickerElement(node) {
 
   const canvas = document.createElement("canvas");
   canvas.style.cssText =
-    "width:100%;max-height:420px;object-fit:contain;background:#080808;border:1px solid #333;cursor:crosshair;";
+    "width:100%;height:auto;max-height:420px;object-fit:contain;background:#080808;border:1px solid #333;cursor:crosshair;";
 
   root.append(toolbar, status, canvas);
 
