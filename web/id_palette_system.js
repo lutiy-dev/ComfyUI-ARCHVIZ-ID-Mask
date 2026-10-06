@@ -61,6 +61,12 @@ function sourceImage(node) {
   return node.imgs[clamp(index, 0, node.imgs.length - 1)] ?? node.imgs[0];
 }
 
+function schedulePreviewRefresh(node, callback) {
+  for (const delay of [0, 50, 150, 400, 900]) {
+    setTimeout(() => callback?.(), delay);
+  }
+}
+
 function sampleRgb(img, imageX, imageY, radius) {
   const width = img.naturalWidth || img.width;
   const height = img.naturalHeight || img.height;
@@ -160,11 +166,20 @@ function createPaletteUi(node) {
   function renderImage() {
     const img = sourceImage(node);
     const ctx = canvas.getContext("2d");
-    if (!img || !img.complete) {
+    if (!img) {
       canvas.width = 620; canvas.height = 150;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "#888"; ctx.font = "14px sans-serif";
-      ctx.fillText("No executed ID preview yet.", 12, 26);
+      ctx.fillText("Waiting for executed ID preview...", 12, 26);
+      return;
+    }
+
+    if (!img.complete || !(img.naturalWidth || img.width)) {
+      canvas.width = 620; canvas.height = 150;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#888"; ctx.font = "14px sans-serif";
+      ctx.fillText("Loading ID preview...", 12, 26);
+      img.addEventListener("load", () => renderImage(), { once: true });
       return;
     }
     const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
@@ -212,6 +227,7 @@ function createPaletteUi(node) {
 
   node.__archvizPaletteRefresh = () => { renderImage(); renderList(); };
   requestAnimationFrame(node.__archvizPaletteRefresh);
+  schedulePreviewRefresh(node, node.__archvizPaletteRefresh);
   return root;
 }
 
@@ -354,8 +370,8 @@ function attachDom(nodeType, factory, minHeight) {
   const originalOnExecuted = nodeType.prototype.onExecuted;
   nodeType.prototype.onExecuted = function () {
     originalOnExecuted?.apply(this, arguments);
+    schedulePreviewRefresh(this, this.__archvizPaletteRefresh);
     setTimeout(() => {
-      this.__archvizPaletteRefresh?.();
       this.__archvizPaletteSelectorRefresh?.();
       this.__archvizGroupSelectorRefresh?.();
     }, 0);
