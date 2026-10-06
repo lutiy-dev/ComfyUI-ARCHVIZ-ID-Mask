@@ -41,9 +41,18 @@ function parsePalette(node) {
   }
 }
 
+function refreshPaletteConsumers() {
+  const nodes = app.graph?._nodes || [];
+  for (const item of nodes) {
+    item.__archvizPaletteSelectorRefresh?.();
+    item.__archvizGroupSelectorRefresh?.();
+  }
+}
+
 function savePalette(node, palette) {
   setWidget(node, "palette_json", JSON.stringify(palette));
   app.graph?.setDirtyCanvas(true, true);
+  queueMicrotask(refreshPaletteConsumers);
 }
 
 function sourceImage(node) {
@@ -206,12 +215,33 @@ function createPaletteUi(node) {
   return root;
 }
 
+function nodeHasPaletteState(node) {
+  return Boolean(getWidget(node, "palette_json"));
+}
+
+function resolvePaletteSource(node, visited = new Set()) {
+  if (!node || visited.has(node.id)) return null;
+  visited.add(node.id);
+
+  if (nodeHasPaletteState(node)) return node;
+
+  for (const input of node.inputs || []) {
+    if (input.link == null) continue;
+    const link = app.graph?.links?.[input.link];
+    if (!link) continue;
+    const upstream = app.graph?.getNodeById?.(link.origin_id);
+    const found = resolvePaletteSource(upstream, visited);
+    if (found) return found;
+  }
+  return null;
+}
+
 function upstreamPaletteNode(node) {
-  const input = node.inputs?.find((x) => x.name === "palette");
-  if (!input || input.link == null) return null;
-  const link = app.graph?.links?.[input.link];
+  const paletteInput = node.inputs?.find((x) => x.name === "palette");
+  if (!paletteInput || paletteInput.link == null) return null;
+  const link = app.graph?.links?.[paletteInput.link];
   if (!link) return null;
-  return app.graph?.getNodeById?.(link.origin_id) || null;
+  return resolvePaletteSource(app.graph?.getNodeById?.(link.origin_id));
 }
 
 function paletteFromConnection(node) {
@@ -242,6 +272,8 @@ function createSingleSelector(node) {
     } else if (palette.colors[0]) {
       select.value = palette.colors[0].id;
       setWidget(node, "color_id", palette.colors[0].id);
+    } else {
+      setWidget(node, "color_id", "");
     }
   }
 
@@ -274,7 +306,12 @@ function createGroupSelector(node) {
 
   function sync() {
     const palette = paletteFromConnection(node);
-    const selected = new Set(currentIds());
+    const validIds = new Set(palette.colors.map((color) => color.id));
+    const selected = new Set(currentIds().filter((id) => validIds.has(id)));
+    const stored = currentIds();
+    if (stored.length !== selected.size || stored.some((id) => !selected.has(id))) {
+      setWidget(node, "color_ids_json", JSON.stringify([...selected]));
+    }
     list.replaceChildren();
     for (const color of palette.colors) {
       const label = document.createElement("label");
