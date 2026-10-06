@@ -47,8 +47,9 @@ def _mask_for_colors(
     for color in colors:
         r, g, b = normalize_rgb(*color["rgb"])
         selected = torch.tensor([r, g, b], dtype=rgb.dtype, device=rgb.device) / 255.0
-        distance = torch.linalg.vector_norm(rgb - selected, dim=-1) * 255.0
-        mask |= distance <= float(tolerance)
+        delta = (rgb - selected) * 255.0
+        distance_sq = torch.sum(delta * delta, dim=-1)
+        mask |= distance_sq <= float(tolerance) ** 2
 
     result = mask.to(dtype=torch.float32)
     return 1.0 - result if invert else result
