@@ -48,6 +48,12 @@ function sourceImage(node) {
   return node.imgs[clamp(index, 0, node.imgs.length - 1)] ?? node.imgs[0];
 }
 
+function schedulePreviewRefresh(node, callback) {
+  for (const delay of [0, 50, 150, 400, 900]) {
+    setTimeout(() => callback?.(), delay);
+  }
+}
+
 function sampleOriginalRgb(img, imageX, imageY, radius) {
   const width = img.naturalWidth || img.width;
   const height = img.naturalHeight || img.height;
@@ -201,13 +207,24 @@ function createPickerElement(node) {
     const img = sourceImage(node);
     const ctx = canvas.getContext("2d");
 
-    if (!img || !img.complete) {
+    if (!img) {
       canvas.width = 640;
       canvas.height = 160;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "#888";
       ctx.font = "14px sans-serif";
-      ctx.fillText("No executed input preview yet.", 14, 28);
+      ctx.fillText("Waiting for executed input preview...", 14, 28);
+      return;
+    }
+
+    if (!img.complete || !(img.naturalWidth || img.width)) {
+      canvas.width = 640;
+      canvas.height = 160;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#888";
+      ctx.font = "14px sans-serif";
+      ctx.fillText("Loading input preview...", 14, 28);
+      img.addEventListener("load", () => render(), { once: true });
       return;
     }
 
@@ -280,6 +297,7 @@ function createPickerElement(node) {
 
   node.__archvizRenderIdPicker = render;
   requestAnimationFrame(render);
+  schedulePreviewRefresh(node, render);
   return root;
 }
 
@@ -313,7 +331,7 @@ app.registerExtension({
     const originalOnExecuted = nodeType.prototype.onExecuted;
     nodeType.prototype.onExecuted = function () {
       originalOnExecuted?.apply(this, arguments);
-      setTimeout(() => this.__archvizRenderIdPicker?.(), 0);
+      schedulePreviewRefresh(this, this.__archvizRenderIdPicker);
     };
 
     const originalOnConfigure = nodeType.prototype.onConfigure;
