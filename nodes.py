@@ -42,12 +42,13 @@ def _mask_for_colors(
     invert: bool,
 ) -> torch.Tensor:
     rgb = _to_rgb(image)
+    rgb8 = torch.round(rgb * 255.0)
     mask = torch.zeros(rgb.shape[:-1], dtype=torch.bool, device=rgb.device)
 
     for color in colors:
         r, g, b = normalize_rgb(*color["rgb"])
-        selected = torch.tensor([r, g, b], dtype=rgb.dtype, device=rgb.device) / 255.0
-        delta = (rgb - selected) * 255.0
+        selected = torch.tensor([r, g, b], dtype=rgb8.dtype, device=rgb8.device)
+        delta = rgb8 - selected
         distance_sq = torch.sum(delta * delta, dim=-1)
         mask |= distance_sq <= float(tolerance) ** 2
 
@@ -113,7 +114,7 @@ class ARCHVIZIDColorPickerMask:
 
         return {
             "ui": {
-                "images": _save_ui_preview(preview, "archviz_id_mask"),
+                "images": _save_ui_preview(_to_rgb(image), "archviz_id_source"),
                 "archviz_id_mask": {
                     "selected_rgb": [r, g, b],
                     "hex": color_hex,
@@ -264,8 +265,15 @@ class ARCHVIZIDGroupMask:
         if not isinstance(color_ids, list):
             raise ValueError("Selected colors must be a list")
 
-        colors = find_colors(palette, color_ids)
-        mask = _mask_for_colors(image, colors, tolerance, invert)
+        if color_ids:
+            colors = find_colors(palette, color_ids)
+            mask = _mask_for_colors(image, colors, tolerance, invert)
+        else:
+            colors = []
+            shape = _to_rgb(image).shape[:-1]
+            mask = torch.zeros(shape, dtype=torch.float32, device=image.device)
+            if invert:
+                mask = 1.0 - mask
         preview = _mask_preview(mask)
         name = (group_name or "Group").strip()[:120]
         return {
