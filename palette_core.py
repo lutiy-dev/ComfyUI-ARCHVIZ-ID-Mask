@@ -4,7 +4,10 @@ import json
 from copy import deepcopy
 from typing import Any
 
-from .mask_core import normalize_rgb, rgb_to_hex
+try:
+    from .mask_core import normalize_rgb, rgb_to_hex
+except ImportError:  # repository-level tests
+    from mask_core import normalize_rgb, rgb_to_hex
 
 SCHEMA_VERSION = 1
 
