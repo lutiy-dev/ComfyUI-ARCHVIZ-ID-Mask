@@ -160,7 +160,7 @@ into extraction. Use separate downstream mask-processing nodes.
 
 ## Installation
 
-### LAB branch — current test build
+### Current v0.2 candidate branch
 
 Clone directly into `ComfyUI/custom_nodes`:
 
@@ -177,7 +177,7 @@ Nodes are under:
 ARCHVIZ / Masking
 ```
 
-This branch is intentionally tested manually before any official registry/API publication.
+This branch has passed synthetic and real-scene ComfyUI runtime validation. Final integration into the full production material workflow is still pending before release/registry publication.
 
 ## Ready-made stress-test workflow
 
@@ -244,7 +244,7 @@ replace source ID image
 large palette / many grouped colors
 ```
 
-The workflow JSON is repository/schema validated, but the project remains **LAB** until this graph passes in a real target ComfyUI installation.
+The workflow JSON and toolkit have passed real ComfyUI runtime validation on the synthetic stress-test and on a real architectural ID pass.
 
 ## Repository verification
 
@@ -259,7 +259,7 @@ Repository checks do **not** prove ComfyUI frontend/runtime compatibility.
 
 ## Runtime acceptance
 
-The full toolkit remains LAB until the following pass in a real target ComfyUI install:
+The following runtime acceptance matrix is used for release gating:
 
 1. synthetic known-color ID pass;
 2. real Corona ID PNG;
