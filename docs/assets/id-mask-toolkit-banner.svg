@@ -116,7 +116,7 @@
     <text x="642" y="54" class="sans" font-size="19" font-weight="700" fill="#f5f4ef">QC</text>
     <text x="698" y="54" class="sans" font-size="20" fill="#ffd400">→</text>
     <text x="738" y="54" class="sans" font-size="19" font-weight="700" fill="#f5f4ef">FLUX / QWEN MATERIAL PASS</text>
-    <text x="1440" y="47" text-anchor="end" class="mono" font-size="15" fill="#ffd400">v0.2 · LAB</text>
+    <text x="1440" y="47" text-anchor="end" class="mono" font-size="15" fill="#ffd400">v0.2 · CANDIDATE</text>
   </g>
 
   <text x="1536" y="84" text-anchor="end" class="mono" font-size="15" fill="#7f8792">OVizLAB · CONTROLLED AI PRODUCTION</text>
