@@ -100,7 +100,7 @@ function createPaletteUi(node) {
   status.textContent = "Queue once, then add a color and click the ID preview.";
 
   const canvas = document.createElement("canvas");
-  canvas.style.cssText = "width:100%;max-height:330px;background:#080808;border:1px solid #333;cursor:crosshair;";
+  canvas.style.cssText = "width:100%;height:auto;max-height:330px;background:#080808;border:1px solid #333;cursor:crosshair;";
 
   const list = document.createElement("div");
   list.style.cssText = "display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto;";
