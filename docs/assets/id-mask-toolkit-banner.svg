@@ -34,7 +34,7 @@
 
   <text x="64" y="84" class="sans" font-size="24" font-weight="700" fill="#ffd400">COMFYUI · ARCHVIZ TOOLKIT</text>
   <text x="64" y="142" class="sans" font-size="52" font-weight="800" fill="#f5f4ef">ARCHVIZ ID MASK TOOLKIT</text>
-  <text x="64" y="182" class="sans" font-size="24" class="soft">Color / Material / Object ID → reusable production masks</text>
+  <text x="64" y="182" class="sans soft" font-size="24">Color / Material / Object ID → reusable production masks</text>
 
   <g transform="translate(64 230)" filter="url(#shadow)">
     <rect class="card" width="320" height="290" rx="20"/>
