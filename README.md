@@ -1,8 +1,16 @@
 # ComfyUI · ARCHVIZ ID Mask Toolkit
 
+<p align="center">
+  <img src="docs/assets/id-mask-toolkit-banner.svg" alt="ARCHVIZ ID Mask Toolkit — Color ID to production masks for ComfyUI" width="100%" />
+</p>
+
 **Status: LAB**
 
 A small ComfyUI toolkit for deterministic masking from Color ID / Material ID / Object ID passes used in architectural visualization.
+
+## Visual overview
+
+The toolkit is designed as a reusable Scene Truth masking layer for controlled Archviz production.
 
 The core production idea:
 
