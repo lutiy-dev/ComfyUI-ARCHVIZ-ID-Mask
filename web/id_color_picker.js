@@ -1,4 +1,5 @@
 import { app } from "../../scripts/app.js";
+import { api } from "../../scripts/api.js";
 
 const NODE_TYPE = "ARCHVIZIDColorPickerMask";
 
@@ -43,9 +44,30 @@ function rgbToHex(rgb) {
 }
 
 function sourceImage(node) {
+  if (node.__archvizExecutedPreview?.complete) return node.__archvizExecutedPreview;
   if (!node.imgs?.length) return null;
   const index = Number.isInteger(node.imageIndex) ? node.imageIndex : 0;
   return node.imgs[clamp(index, 0, node.imgs.length - 1)] ?? node.imgs[0];
+}
+
+function captureExecutedPreview(node, message, refresh) {
+  const images = message?.images;
+  if (!Array.isArray(images) || !images.length) return;
+
+  const info = images[0];
+  if (!info?.filename) return;
+
+  const params = new URLSearchParams();
+  params.set("filename", info.filename);
+  if (info.subfolder) params.set("subfolder", info.subfolder);
+  params.set("type", info.type || "temp");
+
+  const img = new Image();
+  img.onload = () => {
+    node.__archvizExecutedPreview = img;
+    refresh?.();
+  };
+  img.src = api.apiURL("/view?" + params.toString());
 }
 
 function schedulePreviewRefresh(node, callback) {
@@ -329,8 +351,9 @@ app.registerExtension({
     };
 
     const originalOnExecuted = nodeType.prototype.onExecuted;
-    nodeType.prototype.onExecuted = function () {
+    nodeType.prototype.onExecuted = function (message) {
       originalOnExecuted?.apply(this, arguments);
+      captureExecutedPreview(this, message, this.__archvizRenderIdPicker);
       schedulePreviewRefresh(this, this.__archvizRenderIdPicker);
     };
 
