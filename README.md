@@ -152,7 +152,9 @@ into extraction. Use separate downstream mask-processing nodes.
 
 ## Installation
 
-For the current LAB branch:
+### LAB branch — current test build
+
+Clone directly into `ComfyUI/custom_nodes`:
 
 ```bash
 cd ComfyUI/custom_nodes
@@ -166,6 +168,75 @@ Nodes are under:
 ```text
 ARCHVIZ / Masking
 ```
+
+This branch is intentionally tested manually before any official registry/API publication.
+
+## Ready-made stress-test workflow
+
+The repository includes a complete LAB integration graph:
+
+**`example_workflows/ARCHVIZ_ID_MASK_TOOLKIT_STRESS_TEST_v0.2.json`**
+
+and a deterministic synthetic Color ID image:
+
+**`example_assets/ARCHVIZ_ID_STRESS_TEST.png`**
+
+The graph is prewired as:
+
+```text
+Load Image
+    ↓
+ARCHVIZ · ID Palette Picker
+    ├─ Mask From Palette → Road → Preview
+    ├─ Mask From Palette → Greenery → Preview
+    └─ ID Group Mask → Facade → Preview
+```
+
+The synthetic palette includes:
+
+```text
+Facade Blue
+Facade Brown
+Road
+Greenery
+Windows
+Sand
+```
+
+and the image also contains near-color stress zones to probe tolerance behavior.
+
+### Run the test
+
+1. Install the LAB branch and restart ComfyUI.
+2. Copy `example_assets/ARCHVIZ_ID_STRESS_TEST.png` to `ComfyUI/input/`.
+3. Drag `example_workflows/ARCHVIZ_ID_MASK_TOOLKIT_STRESS_TEST_v0.2.json` into ComfyUI.
+4. Queue once.
+5. Expected:
+   - Road preview = only Road;
+   - Greenery preview = only Greenery;
+   - Facade group = Facade Blue + Facade Brown + Sand.
+6. In Palette Picker, add/resample a color with the pipette.
+7. Rename it, delete another slot, save/reload the workflow and verify downstream selectors remain valid.
+8. Replace the synthetic input with a real Corona Color/Material/Object ID PNG and repeat.
+
+### Red-test checklist
+
+Stress the graph deliberately:
+
+```text
+Tolerance: 0 / 1 / 5 / 20
+Sample Radius: 0 / 1 / 2
+rename palette slot
+delete selected slot
+empty group
+Invert
+Reroute between palette and consumer
+save → close → reopen
+replace source ID image
+large palette / many grouped colors
+```
+
+The workflow JSON is repository/schema validated, but the project remains **LAB** until this graph passes in a real target ComfyUI installation.
 
 ## Repository verification
 
@@ -200,4 +271,4 @@ The full toolkit remains LAB until the following pass in a real target ComfyUI i
 - original quick picker: **LAB / provisional pass**;
 - Palette / Single Mask / Group Mask: **LAB / runtime not yet confirmed**.
 
-An importable example workflow JSON will be exported from a real ComfyUI runtime only after the first full runtime PASS.
+The repository now includes a **LAB stress-test workflow JSON** for installation and integration testing. After the first full real-runtime PASS, the tested workflow will become the official example and the package can move toward registry/API publication.
