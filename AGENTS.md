@@ -24,3 +24,17 @@ INSPECT → UNDERSTAND → PLAN → CHANGE → VERIFY → DOCUMENT → REPORT.
 
 ## Status
 Until a real ComfyUI runtime test passes on synthetic and Corona ID passes, the toolkit remains **LAB**.
+
+
+## Pre-runtime verification rule
+
+Before asking the user to perform a manual runtime test:
+
+1. Complete all repository-level checks that can be done without the user's machine.
+2. Run static checks, unit tests, schema/config validation, and synthetic/stress tests where applicable.
+3. Proactively inspect likely failure points and harden them when the fix is clear and low-risk.
+4. Prefer one integrated final acceptance test over many intermediate manual checks.
+5. Leave only environment-specific/runtime verification to the user.
+6. Do not claim PRODUCTION/STABLE until that final real-runtime test passes.
+
+Goal: minimize manual testing time while preserving evidence and reproducibility.
