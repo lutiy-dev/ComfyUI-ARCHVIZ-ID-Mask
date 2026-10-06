@@ -275,8 +275,25 @@ The full toolkit remains LAB until the following pass in a real target ComfyUI i
 
 ## Current validation status
 
-- repository CI: expected to validate syntax and pure palette/mask helpers;
-- original quick picker: **LAB / provisional pass**;
-- Palette / Single Mask / Group Mask: **LAB / runtime not yet confirmed**.
+**VERIFIED**
+- repository CI: PASS;
+- custom nodes register and load in the target ComfyUI runtime;
+- synthetic stress-test workflow: PASS;
+- palette picker click → RGB/HEX slot update: PASS;
+- rename/delete propagation: PASS;
+- workflow save/reload persistence: PASS;
+- single palette masks: PASS;
+- grouped OR masks: PASS;
+- Invert: PASS;
+- Tolerance 0 / 20 behavior: PASS;
+- real architectural ID pass: PASS;
+- masks preserve source resolution in tested runs.
 
-The repository now includes a **LAB stress-test workflow JSON** for installation and integration testing. After the first full real-runtime PASS, the tested workflow will become the official example and the package can move toward registry/API publication.
+**NOT YET CONFIRMED**
+- final integration inside the full ARCHVIZ production material graph;
+- dedicated Reroute acceptance test in the target frontend;
+- Comfy Registry/API publication.
+
+Current release gate: **PRODUCTION CANDIDATE**.
+
+The included stress-test workflow remains the reproducible public example. The next milestone is integration into the main production workflow, followed by release/registry preparation.
