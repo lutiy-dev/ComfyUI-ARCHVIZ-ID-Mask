@@ -449,6 +449,6 @@ The next milestone is full integration into the main ARCHVIZ production workflow
 
 # License
 
-License is not finalized yet.
+This project is released under the **MIT License**.
 
-Do not assume redistribution or commercial-use terms until a repository LICENSE file is published.
+See [LICENSE](LICENSE) for the full text.
