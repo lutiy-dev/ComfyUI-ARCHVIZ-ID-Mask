@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-archviz-id-mask"
+version = "0.2.0"
+description = "Palette-driven Color/Material/Object ID masking toolkit for controlled architectural visualization workflows in ComfyUI."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/lutiy-dev/ComfyUI-ARCHVIZ-ID-Mask"
+
+[tool.comfy]
+PublisherId = "lutiy-dev"
+DisplayName = "ARCHVIZ ID Mask"
+Icon = ""
