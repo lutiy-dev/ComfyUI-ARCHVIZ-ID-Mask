@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-archviz-id-mask"
-version = "0.1.0"
-description = "ComfyUI Color/Material/Object ID picker to deterministic binary mask for architectural visualization workflows."
+version = "0.2.0"
+description = "Palette-driven Color/Material/Object ID masking toolkit for controlled architectural visualization workflows in ComfyUI."
 requires-python = ">=3.10"
 dependencies = []
 
