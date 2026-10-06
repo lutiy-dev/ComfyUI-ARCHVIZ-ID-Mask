@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-archviz-id-mask"
+version = "0.1.0"
+description = "ComfyUI Color/Material/Object ID picker to deterministic binary mask for architectural visualization workflows."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/lutiy-dev/ComfyUI-ARCHVIZ-ID-Mask"
+
+[tool.comfy]
+PublisherId = "lutiy-dev"
+DisplayName = "ARCHVIZ ID Mask"
+Icon = ""
