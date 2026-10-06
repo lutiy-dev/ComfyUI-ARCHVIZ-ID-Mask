@@ -1,64 +1,120 @@
-# ComfyUI · ARCHVIZ ID Mask
+# ComfyUI · ARCHVIZ ID Mask Toolkit
 
 **Status: LAB**
 
-`ARCHVIZ · ID Color Picker Mask` turns a Color ID / Material ID / Object ID pass into a deterministic binary ComfyUI `MASK`.
+A small ComfyUI toolkit for deterministic masking from Color ID / Material ID / Object ID passes used in architectural visualization.
 
-The production idea is deliberately simple:
+The core production idea:
 
 ```text
-Corona / 3ds Max ID pass
-        ↓
-ARCHVIZ · ID Color Picker Mask
-        ↓
-click exact ID color
-        ↓
-MASK + QC preview
-        ↓
-FLUX / Qwen / material pass / masked composite
+Color / Material / Object ID pass
+              │
+              ▼
+ARCHVIZ · ID Palette Picker
+              │
+        ARCHVIZ_ID_PALETTE
+              │
+        ┌─────┴─────────┐
+        ▼               ▼
+Mask From Palette   ID Group Mask
+        │               │
+        ▼               ▼
+   single MASK      grouped MASK
 ```
 
 No VLM, SAM, GroundingDINO or semantic segmentation is required when the 3D scene already provides exact IDs.
 
-## v0.1 scope
+## Nodes
 
-- `IMAGE` input;
-- in-node picker UI;
-- source-image pixel sampling;
-- `Sample Radius`: 0 = 1 px, 1 = 3×3 average, 2 = 5×5 average;
-- selected RGB swatch + RGB + HEX;
-- Euclidean RGB `Tolerance` (default `5`);
-- deterministic Python backend mask extraction;
-- `Invert`;
-- local `ID / MASK` QC view;
-- outputs: `MASK`, grayscale `IMAGE` preview, `R`, `G`, `B`, `HEX`.
+### ARCHVIZ · ID Color Picker Mask
 
-The frontend is **not** the source of truth for the workflow mask. JavaScript selects RGB; Python calculates the returned mask.
+Quick mode: one clicked RGB color → one deterministic binary mask.
 
-## Current LAB workflow
+Use when you only need one surface.
 
-Because the input arrives as an upstream ComfyUI `IMAGE` tensor, the frontend needs one execution before it can display that exact input preview.
+### ARCHVIZ · ID Palette Picker
 
-1. Connect the ID pass.
-2. Queue once to load the current input preview.
-3. Click `🎯 PICK COLOR`, then click the required ID region.
-4. Inspect the instant local `MASK` preview.
-5. Queue again to update the real backend `MASK` output.
+Production mode palette builder.
 
-The picker maps the click back to the preview image's natural pixel dimensions before sampling. The real workflow mask is still calculated by Python from the persisted RGB values.
+- one `IMAGE` ID pass;
+- in-node preview;
+- `+ ADD COLOR`;
+- click exact ID color;
+- rename/delete slots;
+- RGB + HEX diagnostics;
+- Sample Radius `0 / 1 / 2` = `1×1 / 3×3 / 5×5`;
+- outputs:
+  - `ARCHVIZ_ID_PALETTE`;
+  - passthrough `IMAGE`.
 
-## Algorithm
+Palette schema:
 
-For selected RGB `S` and pixel RGB `P`:
+```json
+{
+  "version": 1,
+  "colors": [
+    {
+      "id": "stable-id",
+      "name": "Facade Blue",
+      "rgb": [41, 78, 166],
+      "hex": "#294EA6"
+    }
+  ]
+}
+```
+
+The serialized palette widget is the workflow truth source. Browser-only state is not used as the production source of truth.
+
+### ARCHVIZ · Mask From Palette
+
+Takes:
+
+```text
+IMAGE
+ARCHVIZ_ID_PALETTE
+selected palette color
+Tolerance
+Invert
+```
+
+Returns:
+
+```text
+MASK
+PREVIEW
+HEX
+```
+
+Use multiple copies for Road, Greenery, Windows, etc.
+
+### ARCHVIZ · ID Group Mask
+
+Unions several palette slots into one semantic mask.
+
+Example:
+
+```text
+Facade Blue
+OR
+Facade Brown
+OR
+Stone Arch
+=
+FACADE MASK
+```
+
+Colors are matched independently and combined with logical OR. RGB values are never averaged together.
+
+## Baseline mask algorithm
+
+For selected RGB `S` and source pixel `P`:
 
 ```text
 distance = sqrt((Pr-Sr)^2 + (Pg-Sg)^2 + (Pb-Sb)^2)
 mask = 1 when distance <= tolerance, otherwise 0
 ```
 
-The node does not blur or feather the result.
-
-Recommended baseline for a clean Corona ID pass:
+Recommended clean Corona ID baseline:
 
 ```text
 Tolerance = 5
@@ -66,50 +122,72 @@ Sample Radius = 0
 Invert = OFF
 ```
 
-Use PNG for production ID passes. JPEG compression may create near-identical colors and normally needs a larger tolerance.
+Use PNG for production ID passes. JPEG compression may require a larger tolerance.
+
+## Important design rule
+
+These nodes perform **ID extraction**, not mask modification.
+
+Do not mix:
+
+```text
+Blur
+Feather
+Grow
+Erode
+Dilate
+```
+
+into extraction. Use separate downstream mask-processing nodes.
 
 ## Installation
 
-Clone into `ComfyUI/custom_nodes/` and restart ComfyUI:
+For the current LAB branch:
 
 ```bash
-git clone https://github.com/lutiy-dev/ComfyUI-ARCHVIZ-ID-Mask.git
+cd ComfyUI/custom_nodes
+git clone -b feat/id-mask-toolkit-v0.2 https://github.com/lutiy-dev/ComfyUI-ARCHVIZ-ID-Mask.git
 ```
 
-Node path:
+Restart ComfyUI.
+
+Nodes are under:
 
 ```text
-ARCHVIZ / Masking / ARCHVIZ · ID Color Picker Mask
+ARCHVIZ / Masking
 ```
 
 ## Repository verification
 
 ```bash
 python -m unittest discover -s tests -v
-python -m py_compile __init__.py nodes.py mask_core.py
+python -m py_compile __init__.py nodes.py mask_core.py palette_core.py
 node --check web/id_color_picker.js
+node --check web/id_palette_system.js
 ```
 
-These checks validate the repository-level code. They do **not** prove ComfyUI runtime compatibility.
+Repository checks do **not** prove ComfyUI frontend/runtime compatibility.
 
-## Runtime acceptance required before STABLE
+## Runtime acceptance
 
-1. Synthetic ID image with known RGB values.
-2. Clean PNG Corona ID pass.
-3. Anti-aliased boundary.
-4. JPEG edge case.
-5. Multiple image resolutions and preview scales.
-6. Workflow save/reload preserves selected RGB.
-7. Output mask resolution equals input resolution.
-8. `Tolerance=0` performs exact match.
-9. Output `MASK` successfully drives the target material-pass workflow.
+The full toolkit remains LAB until the following pass in a real target ComfyUI install:
 
-Until these pass in the target ComfyUI installation, status remains **LAB**.
+1. synthetic known-color ID pass;
+2. real Corona ID PNG;
+3. palette with at least 5 colors;
+4. rename/delete palette slots;
+5. workflow save/reload preserves palette;
+6. Mask From Palette correctly switches between slots;
+7. Group Mask correctly unions multiple slots;
+8. `Tolerance=0` performs exact match;
+9. masks preserve input resolution;
+10. external Preview Mask matches the internal QC result;
+11. outputs successfully drive the target FLUX/Qwen/material-pass graph.
 
-## Example workflow
+## Current validation status
 
-An importable workflow JSON is intentionally not hand-authored yet. It will be exported from the real ComfyUI runtime after the first runtime PASS so the file matches the actual active workflow schema.
+- repository CI: expected to validate syntax and pure palette/mask helpers;
+- original quick picker: **LAB / provisional pass**;
+- Palette / Single Mask / Group Mask: **LAB / runtime not yet confirmed**.
 
-## Design rule
-
-This node extracts geometry truth. Mask modification belongs in separate downstream nodes such as Grow, Blur, Feather, Erode or Dilate.
+An importable example workflow JSON will be exported from a real ComfyUI runtime only after the first full runtime PASS.
