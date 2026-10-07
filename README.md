@@ -101,6 +101,13 @@ Output only the flat material-region map.
 
 Qwen is used as the semantic/material grouping stage. The custom node then removes generated color drift and converts the result into stable exact IDs. Flux is intentionally not part of this v0.1 branch.
 
+
+Acceptance workflow:
+
+`example_workflows/ARCHVIZ_QWEN_MATERIAL_REGION_MAP_v0.1.json`
+
+For the first test, save one Qwen material-map output as `qwen_material_map.png`, load it together with the original beauty render, and verify that the node returns a stable flat-color ID image. The generated `palette` can feed `Mask From Palette` directly; `id_image` can also be routed into `ID Palette Picker` when manual naming/curation is preferred.
+
 ## Nodes
 
 ### ARCHVIZ · ID Color Picker Mask
