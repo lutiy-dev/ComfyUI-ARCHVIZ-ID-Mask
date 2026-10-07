@@ -19,6 +19,7 @@ from .color_range_core import (
     connected_component_4,
     lab_chroma_gradient,
 )
+from .qwen_material_region_core import build_qwen_material_region_map
 
 
 def _to_rgb(image: torch.Tensor) -> torch.Tensor:
@@ -416,12 +417,110 @@ class ARCHVIZColorRangeMask:
         }
 
 
+class ARCHVIZQwenMaterialRegionMap:
+    """Convert a Qwen-produced material/semantic map into a deterministic pseudo Material ID."""
+
+    CATEGORY = "ARCHVIZ/Masking"
+    FUNCTION = "build"
+    RETURN_TYPES = ("IMAGE", "IMAGE", "ARCHVIZ_ID_PALETTE", "STRING", "INT")
+    RETURN_NAMES = ("id_image", "edge_map", "palette", "palette_json", "region_count")
+    OUTPUT_NODE = True
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "source_image": ("IMAGE",),
+                "qwen_map": ("IMAGE",),
+                "region_count": ("INT", {"default": 12, "min": 2, "max": 24, "step": 1}),
+                "qwen_smoothing": ("INT", {"default": 1, "min": 0, "max": 3, "step": 1}),
+                "cleanup_passes": ("INT", {"default": 1, "min": 0, "max": 3, "step": 1}),
+                "edge_protect": ("FLOAT", {"default": 0.35, "min": 0.0, "max": 1.0, "step": 0.05}),
+            }
+        }
+
+    def build(
+        self,
+        source_image: torch.Tensor,
+        qwen_map: torch.Tensor,
+        region_count: int,
+        qwen_smoothing: int,
+        cleanup_passes: int,
+        edge_protect: float,
+    ):
+        source = _to_rgb(source_image)
+        generated = _to_rgb(qwen_map)
+
+        if source.shape[0] != generated.shape[0]:
+            raise ValueError(
+                f"Source and Qwen map batch size must match, got {source.shape[0]} vs {generated.shape[0]}"
+            )
+        if source.shape[1:3] != generated.shape[1:3]:
+            raise ValueError(
+                "Source and Qwen map resolution must match before ARCHVIZ · Qwen Material Region Map"
+            )
+
+        device = source.device
+        id_images = []
+        edge_images = []
+        palettes = []
+        palette_jsons = []
+        counts = []
+
+        for batch_index in range(source.shape[0]):
+            source_np = source[batch_index].detach().cpu().numpy()
+            qwen_np = generated[batch_index].detach().cpu().numpy()
+
+            id_np, edge_np, palette_json, actual_count = build_qwen_material_region_map(
+                source_np,
+                qwen_np,
+                region_count=region_count,
+                qwen_smoothing=qwen_smoothing,
+                cleanup_passes=cleanup_passes,
+                edge_protect=edge_protect,
+            )
+
+            id_t = torch.from_numpy(id_np).to(device=device, dtype=torch.float32)
+            edge_t = torch.from_numpy(edge_np).to(device=device, dtype=torch.float32)
+            edge_rgb = edge_t.unsqueeze(-1).repeat(1, 1, 3)
+
+            id_images.append(id_t)
+            edge_images.append(edge_rgb)
+            palette_jsons.append(palette_json)
+            palettes.append(normalize_palette(palette_json))
+            counts.append(int(actual_count))
+
+        if len(id_images) != 1:
+            raise ValueError(
+                "ARCHVIZ · Qwen Material Region Map v0.1 currently supports batch size 1"
+            )
+
+        id_image = torch.stack(id_images, dim=0)
+        edge_image = torch.stack(edge_images, dim=0)
+        palette = palettes[0]
+        palette_json = palette_jsons[0]
+        actual_count = counts[0]
+
+        return {
+            "ui": {
+                "images": _save_ui_preview(id_image, "archviz_qwen_material_region_map"),
+                "archviz_qwen_material_region_map": {
+                    "region_count": actual_count,
+                    "palette": palette,
+                    "source": "qwen",
+                },
+            },
+            "result": (id_image, edge_image, palette, palette_json, actual_count),
+        }
+
+
 NODE_CLASS_MAPPINGS = {
     "ARCHVIZIDColorPickerMask": ARCHVIZIDColorPickerMask,
     "ARCHVIZIDPalettePicker": ARCHVIZIDPalettePicker,
     "ARCHVIZMaskFromPalette": ARCHVIZMaskFromPalette,
     "ARCHVIZIDGroupMask": ARCHVIZIDGroupMask,
     "ARCHVIZColorRangeMask": ARCHVIZColorRangeMask,
+    "ARCHVIZQwenMaterialRegionMap": ARCHVIZQwenMaterialRegionMap,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -430,4 +529,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ARCHVIZMaskFromPalette": "ARCHVIZ · Mask From Palette",
     "ARCHVIZIDGroupMask": "ARCHVIZ · ID Group Mask",
     "ARCHVIZColorRangeMask": "ARCHVIZ · Color Range Mask",
+    "ARCHVIZQwenMaterialRegionMap": "ARCHVIZ · Qwen Material Region Map",
 }
