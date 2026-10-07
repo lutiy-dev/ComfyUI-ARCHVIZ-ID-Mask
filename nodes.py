@@ -12,7 +12,14 @@ import folder_paths
 
 from .mask_core import MAX_RGB_DISTANCE, normalize_rgb, rgb_to_hex
 from .palette_core import find_color, find_colors, normalize_palette
-from .color_range_core import (\n    adaptive_lab_hsv_similarity,\n    apply_channel_assist,\n    best_channel_assist,\n    connected_component_4,\n    lab_chroma_gradient,\n)\n
+from .color_range_core import (
+    adaptive_lab_hsv_similarity,
+    apply_channel_assist,
+    best_channel_assist,
+    connected_component_4,
+    lab_chroma_gradient,
+)
+
 
 def _to_rgb(image: torch.Tensor) -> torch.Tensor:
     if image.ndim != 4:
@@ -413,10 +420,14 @@ NODE_CLASS_MAPPINGS = {
     "ARCHVIZIDColorPickerMask": ARCHVIZIDColorPickerMask,
     "ARCHVIZIDPalettePicker": ARCHVIZIDPalettePicker,
     "ARCHVIZMaskFromPalette": ARCHVIZMaskFromPalette,
-    "ARCHVIZIDGroupMask": ARCHVIZIDGroupMask,\n    "ARCHVIZColorRangeMask": ARCHVIZColorRangeMask,\n}
+    "ARCHVIZIDGroupMask": ARCHVIZIDGroupMask,
+    "ARCHVIZColorRangeMask": ARCHVIZColorRangeMask,
+}
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ARCHVIZIDColorPickerMask": "ARCHVIZ · ID Color Picker Mask",
     "ARCHVIZIDPalettePicker": "ARCHVIZ · ID Palette Picker",
     "ARCHVIZMaskFromPalette": "ARCHVIZ · Mask From Palette",
-    "ARCHVIZIDGroupMask": "ARCHVIZ · ID Group Mask",\n    "ARCHVIZColorRangeMask": "ARCHVIZ · Color Range Mask",\n}
+    "ARCHVIZIDGroupMask": "ARCHVIZ · ID Group Mask",
+    "ARCHVIZColorRangeMask": "ARCHVIZ · Color Range Mask",
+}
