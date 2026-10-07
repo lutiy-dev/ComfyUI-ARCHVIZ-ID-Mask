@@ -1,15 +1,15 @@
 # Agent Rules
 
 ## Scope
-This repository contains the ARCHVIZ ID Mask Toolkit for ComfyUI.
+This repository contains the O Lab Vis ID Mask Toolkit for ComfyUI.
 
 Current nodes:
-- `ARCHVIZ · ID Color Picker Mask` — quick one-color → one-mask mode.
-- `ARCHVIZ · ID Palette Picker` — build named RGB slots from one ID pass.
-- `ARCHVIZ · Mask From Palette` — one palette slot → one mask.
-- `ARCHVIZ · ID Group Mask` — union multiple palette slots into one semantic mask.
-- `ARCHVIZ · Color Range Mask` — beauty-image rough masking using adaptive LAB+HSV similarity, Connected selection, channel assistance, and LAB chroma boundary diagnostics.
-- `ARCHVIZ · Qwen Material Region Map` — stabilizes a Qwen-generated semantic/material map into deterministic flat-color pseudo Material ID regions for downstream palette and mask nodes.
+- `O Lab Vis · ID Color Picker Mask` — quick one-color → one-mask mode.
+- `O Lab Vis · ID Palette Picker` — build named RGB slots from one ID pass.
+- `O Lab Vis · Mask From Palette` — one palette slot → one mask.
+- `O Lab Vis · ID Group Mask` — union multiple palette slots into one semantic mask.
+- `O Lab Vis · Color Range Mask` — beauty-image rough masking using adaptive LAB+HSV similarity, Connected selection, channel assistance, and LAB chroma boundary diagnostics.
+- `O Lab Vis · Qwen Material Region Map` — stabilizes a Qwen-generated semantic/material map into deterministic flat-color pseudo Material ID regions for downstream palette and mask nodes.
 
 ## Production invariants
 - Color ID / Material ID / Object ID is the geometry truth source.
@@ -74,3 +74,9 @@ Goal: minimize manual testing time while preserving evidence and reproducibility
 - Source-image LAB Chroma Gradient protects strong material boundaries during cleanup.
 - Do not claim the pseudo map is scene truth. Exact Material/Object/Color ID passes remain higher-confidence inputs when available.
 - No Flux integration in v0.1. Flux-specific support is a separate future extension and must not alter the Qwen baseline.
+
+
+## Branding / discovery
+- User-facing node display names must start with `O Lab Vis ·`.
+- User-facing node category must be `O Lab Vis/Masking`.
+- Keep internal node class keys stable for workflow compatibility unless a migration is explicitly planned.
