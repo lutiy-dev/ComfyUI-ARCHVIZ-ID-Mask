@@ -18,7 +18,7 @@ The core production idea:
 Color / Material / Object ID pass
               │
               ▼
-O Lab Vis · ID Palette Picker
+OLabVis · ID Palette Picker
               │
         ARCHVIZ_ID_PALETTE
               │
@@ -35,7 +35,7 @@ No VLM, SAM, GroundingDINO or semantic segmentation is required when the 3D scen
 
 > **Qwen pseudo-ID branch:** `feat/qwen-material-region-map-v0.1` adds an optional fallback path for scenes that do **not** have a real Material/Object/Color ID pass. Exact scene ID remains preferred when available.
 
-### O Lab Vis · Qwen Material Region Map — LAB / ALPHA
+### OLabVis · Qwen Material Region Map — LAB / ALPHA
 
 This node converts a Qwen-generated material/semantic map into a deterministic flat-color pseudo Material ID that the existing toolkit can consume.
 
@@ -52,7 +52,7 @@ BEAUTY RENDER
                  qwen_map IMAGE
                          │
                          ▼
-          O Lab Vis · Qwen Material Region Map
+          OLabVis · Qwen Material Region Map
                          │
              ┌───────────┴────────────┐
              ▼                        ▼
@@ -110,13 +110,13 @@ For the first test, save one Qwen material-map output as `qwen_material_map.png`
 
 ## Nodes
 
-### O Lab Vis · ID Color Picker Mask
+### OLabVis · ID Color Picker Mask
 
 Quick mode: one clicked RGB color → one deterministic binary mask.
 
 Use when you only need one surface.
 
-### O Lab Vis · ID Palette Picker
+### OLabVis · ID Palette Picker
 
 Production mode palette builder.
 
@@ -151,7 +151,7 @@ The serialized palette widget is the workflow truth source. Browser-only state i
 
 The picker and backend intentionally operate in the same **8-bit RGB domain (0..255)**. This keeps the clicked preview color and backend exact-match behavior deterministic, including when an upstream image originally had higher channel precision.
 
-### O Lab Vis · Mask From Palette
+### OLabVis · Mask From Palette
 
 Takes:
 
@@ -173,7 +173,7 @@ HEX
 
 Use multiple copies for Road, Greenery, Windows, etc.
 
-### O Lab Vis · ID Group Mask
+### OLabVis · ID Group Mask
 
 Unions several palette slots into one semantic mask.
 
@@ -250,7 +250,7 @@ Restart ComfyUI.
 Nodes are under:
 
 ```text
-O Lab Vis / Masking
+OLabVis / Masking
 ```
 
 This branch has passed synthetic and real-scene ComfyUI runtime validation. Final integration into the full production material workflow is still pending before release/registry publication.
@@ -270,7 +270,7 @@ The graph is prewired as:
 ```text
 Load Image
     ↓
-O Lab Vis · ID Palette Picker
+OLabVis · ID Palette Picker
     ├─ Mask From Palette → Road → Preview
     ├─ Mask From Palette → Greenery → Preview
     └─ ID Group Mask → Facade → Preview
