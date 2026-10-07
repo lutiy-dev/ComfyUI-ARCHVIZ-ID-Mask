@@ -1,15 +1,15 @@
 # Agent Rules
 
 ## Scope
-This repository contains the O Lab Vis ID Mask Toolkit for ComfyUI.
+This repository contains the OLabVis ID Mask Toolkit for ComfyUI.
 
 Current nodes:
-- `O Lab Vis · ID Color Picker Mask` — quick one-color → one-mask mode.
-- `O Lab Vis · ID Palette Picker` — build named RGB slots from one ID pass.
-- `O Lab Vis · Mask From Palette` — one palette slot → one mask.
-- `O Lab Vis · ID Group Mask` — union multiple palette slots into one semantic mask.
-- `O Lab Vis · Color Range Mask` — beauty-image rough masking using adaptive LAB+HSV similarity, Connected selection, channel assistance, and LAB chroma boundary diagnostics.
-- `O Lab Vis · Qwen Material Region Map` — stabilizes a Qwen-generated semantic/material map into deterministic flat-color pseudo Material ID regions for downstream palette and mask nodes.
+- `OLabVis · ID Color Picker Mask` — quick one-color → one-mask mode.
+- `OLabVis · ID Palette Picker` — build named RGB slots from one ID pass.
+- `OLabVis · Mask From Palette` — one palette slot → one mask.
+- `OLabVis · ID Group Mask` — union multiple palette slots into one semantic mask.
+- `OLabVis · Color Range Mask` — beauty-image rough masking using adaptive LAB+HSV similarity, Connected selection, channel assistance, and LAB chroma boundary diagnostics.
+- `OLabVis · Qwen Material Region Map` — stabilizes a Qwen-generated semantic/material map into deterministic flat-color pseudo Material ID regions for downstream palette and mask nodes.
 
 ## Production invariants
 - Color ID / Material ID / Object ID is the geometry truth source.
@@ -77,6 +77,6 @@ Goal: minimize manual testing time while preserving evidence and reproducibility
 
 
 ## Branding / discovery
-- User-facing node display names must start with `O Lab Vis ·`.
-- User-facing node category must be `O Lab Vis/Masking`.
+- User-facing node display names must start with `OLabVis ·`.
+- User-facing node category must be `OLabVis/Masking`.
 - Keep internal node class keys stable for workflow compatibility unless a migration is explicitly planned.
