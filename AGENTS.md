@@ -3,11 +3,12 @@
 ## Scope
 This repository contains the ARCHVIZ ID Mask Toolkit for ComfyUI.
 
-Current LAB nodes:
+Current nodes:
 - `ARCHVIZ · ID Color Picker Mask` — quick one-color → one-mask mode.
 - `ARCHVIZ · ID Palette Picker` — build named RGB slots from one ID pass.
 - `ARCHVIZ · Mask From Palette` — one palette slot → one mask.
 - `ARCHVIZ · ID Group Mask` — union multiple palette slots into one semantic mask.
+- `ARCHVIZ · Color Range Mask` — beauty-image rough masking using adaptive LAB+HSV similarity, Connected selection, channel assistance, and LAB chroma boundary diagnostics.
 
 ## Production invariants
 - Color ID / Material ID / Object ID is the geometry truth source.
@@ -49,3 +50,15 @@ Before asking the user to perform a manual runtime test:
 6. Do not claim PRODUCTION/STABLE until that final real-runtime test passes.
 
 Goal: minimize manual testing time while preserving evidence and reproducibility.
+
+## Color Range v0.1 prototype rules
+- Keep the deterministic ID extraction nodes unchanged unless a bug is independently verified.
+- Beauty-image masking is a separate path and must not change ID-mask semantics.
+- Python backend remains source of truth for workflow outputs.
+- LAB chroma is the primary beauty-image color signal; lightness is handled separately; HSV Hue is saturation-reliability weighted.
+- Connected mode uses a 4-connected component from the clicked seed.
+- LAB Chroma Gradient is the default boundary diagnostic/guidance signal.
+- Channel Assist is auxiliary and confidence-gated; it must never silently replace the primary selector.
+- Random Walker, SAM, HED, PiDiNet, DexiNed, M-LSD, Depth and Normals are not required dependencies for the first prototype.
+- Preserve diagnostic outputs (confidence and edge map) so failures can be localized before adding more algorithms.
+- Do not promote the Color Range node beyond LAB/ALPHA until real ComfyUI runtime tests and graph integration pass.
