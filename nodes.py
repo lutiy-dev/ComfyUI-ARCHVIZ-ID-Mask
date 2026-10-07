@@ -72,7 +72,7 @@ def _mask_preview(mask: torch.Tensor) -> torch.Tensor:
 class ARCHVIZIDColorPickerMask:
     """Quick mode: extract one deterministic binary mask from an RGB ID pass."""
 
-    CATEGORY = "O Lab Vis/Masking"
+    CATEGORY = "OLabVis/Masking"
     FUNCTION = "extract"
     RETURN_TYPES = ("MASK", "IMAGE", "INT", "INT", "INT", "STRING")
     RETURN_NAMES = ("mask", "preview", "r", "g", "b", "hex")
@@ -137,7 +137,7 @@ class ARCHVIZIDColorPickerMask:
 class ARCHVIZIDPalettePicker:
     """Build a named RGB palette from one Color/Object/Material ID pass."""
 
-    CATEGORY = "O Lab Vis/Masking"
+    CATEGORY = "OLabVis/Masking"
     FUNCTION = "build"
     RETURN_TYPES = ("ARCHVIZ_ID_PALETTE", "IMAGE")
     RETURN_NAMES = ("palette", "image")
@@ -175,7 +175,7 @@ class ARCHVIZIDPalettePicker:
 class ARCHVIZMaskFromPalette:
     """Convert one palette slot into a deterministic binary mask."""
 
-    CATEGORY = "O Lab Vis/Masking"
+    CATEGORY = "OLabVis/Masking"
     FUNCTION = "extract"
     RETURN_TYPES = ("MASK", "IMAGE", "STRING")
     RETURN_NAMES = ("mask", "preview", "hex")
@@ -228,7 +228,7 @@ class ARCHVIZMaskFromPalette:
 class ARCHVIZIDGroupMask:
     """Union multiple palette slots into one semantic production mask."""
 
-    CATEGORY = "O Lab Vis/Masking"
+    CATEGORY = "OLabVis/Masking"
     FUNCTION = "extract"
     RETURN_TYPES = ("MASK", "IMAGE", "STRING")
     RETURN_NAMES = ("mask", "preview", "group_name")
@@ -300,7 +300,7 @@ class ARCHVIZIDGroupMask:
 class ARCHVIZColorRangeMask:
     """Beauty-image color range masking with adaptive color and boundary diagnostics."""
 
-    CATEGORY = "O Lab Vis/Masking"
+    CATEGORY = "OLabVis/Masking"
     FUNCTION = "extract"
     RETURN_TYPES = ("MASK", "IMAGE", "IMAGE", "IMAGE", "STRING")
     RETURN_NAMES = ("mask", "preview", "confidence", "edge_map", "hex")
@@ -421,7 +421,7 @@ class ARCHVIZColorRangeMask:
 class ARCHVIZQwenMaterialRegionMap:
     """Convert a Qwen-produced material/semantic map into a deterministic pseudo Material ID."""
 
-    CATEGORY = "O Lab Vis/Masking"
+    CATEGORY = "OLabVis/Masking"
     FUNCTION = "build"
     RETURN_TYPES = ("IMAGE", "IMAGE", "ARCHVIZ_ID_PALETTE", "STRING", "INT")
     RETURN_NAMES = ("id_image", "edge_map", "palette", "palette_json", "region_count")
@@ -548,10 +548,10 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ARCHVIZIDColorPickerMask": "O Lab Vis · ID Color Picker Mask",
-    "ARCHVIZIDPalettePicker": "O Lab Vis · ID Palette Picker",
-    "ARCHVIZMaskFromPalette": "O Lab Vis · Mask From Palette",
-    "ARCHVIZIDGroupMask": "O Lab Vis · ID Group Mask",
-    "ARCHVIZColorRangeMask": "O Lab Vis · Color Range Mask",
-    "ARCHVIZQwenMaterialRegionMap": "O Lab Vis · Qwen Material Region Map",
+    "ARCHVIZIDColorPickerMask": "OLabVis · ID Color Picker Mask",
+    "ARCHVIZIDPalettePicker": "OLabVis · ID Palette Picker",
+    "ARCHVIZMaskFromPalette": "OLabVis · Mask From Palette",
+    "ARCHVIZIDGroupMask": "OLabVis · ID Group Mask",
+    "ARCHVIZColorRangeMask": "OLabVis · Color Range Mask",
+    "ARCHVIZQwenMaterialRegionMap": "OLabVis · Qwen Material Region Map",
 }
