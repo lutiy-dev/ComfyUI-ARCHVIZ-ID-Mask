@@ -373,3 +373,69 @@ The following runtime acceptance matrix is used for release gating:
 Current release gate: **PRODUCTION CANDIDATE**.
 
 The included stress-test workflow remains the reproducible public example. The next milestone is integration into the main production workflow, followed by release/registry preparation.
+
+
+## Qwen pre-sampler Material ID path — LAB / ALPHA
+
+The preferred Qwen masking architecture now runs **before** the main material-edit sampler:
+
+```text
+Beauty IMAGE
+   │
+   ├─ Qwen3-VL / Generate Text
+   │       │
+   │       ▼
+   │  OLabVis · Qwen Material Analyzer
+   │       │
+   │       ▼
+   │    material plan
+   │       │
+   │       ▼
+   │     SAM3
+   │       │
+   │       ▼
+   │  OLabVis · Material ID Builder
+   │       │
+   │       ├─ flat RGB pseudo Material ID
+   │       └─ ARCHVIZ_ID_PALETTE
+   │
+   └────────────────────────────→ main Qwen Image 2.1 material-edit sampler
+                                   using the selected MASK
+```
+
+Important: the Qwen diffusion `MODEL` socket is not a semantic/mask output. Scene understanding is performed by the Qwen3-VL vision/text path before sampling.
+
+### New nodes
+
+**`OLabVis · Qwen Analyzer Prompt`**
+- outputs the controlled JSON-only Qwen3-VL analysis prompt.
+
+**`OLabVis · Qwen Material Analyzer`**
+- input: TextGenerate output + source IMAGE;
+- validates/normalizes the Qwen material plan;
+- outputs: normalized plan JSON, selected `sam_prompt`, material name, bbox diagnostic and region count;
+- `region_index` lets you inspect one detected material region at a time.
+
+**`OLabVis · Material ID Builder`**
+- accepts up to eight SAM masks;
+- assigns deterministic exact RGB IDs;
+- outputs flat ID IMAGE + `ARCHVIZ_ID_PALETTE`;
+- overlap rule v0.1: earlier slots win, so put specific masks (glass/frame/curb) before generic masks (facade/road).
+
+### First runtime checkpoint
+
+Test only this first:
+
+```text
+Qwen3-VL CLIP + Beauty IMAGE
+        ↓
+ComfyUI Generate Text
+        ↓
+OLabVis · Qwen Material Analyzer
+        ↓
+plan_json / sam_prompt / material_name
+```
+
+Do **not** connect SAM3 until this checkpoint returns a valid material plan. This follows the project Checkpoint Workflow and isolates Qwen analysis from segmentation errors.
+
+The older **`OLabVis · Qwen Material Region Map`** is kept as a fallback for workflows that already produce a generated semantic/flat map image.
