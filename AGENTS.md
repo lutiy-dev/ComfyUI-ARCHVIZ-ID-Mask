@@ -80,3 +80,16 @@ Goal: minimize manual testing time while preserving evidence and reproducibility
 - User-facing node display names must start with `OLabVis ·`.
 - User-facing node category must be `OLabVis/Masking`.
 - Keep internal node class keys stable for workflow compatibility unless a migration is explicitly planned.
+
+
+## Qwen pre-sampler architecture v0.1
+- Primary path is pre-sampler analysis, not post-sampler image analysis.
+- Qwen diffusion MODEL is not treated as a mask/semantic output.
+- Use the Qwen3-VL text/vision encoder through ComfyUI TextGenerate with the beauty IMAGE before the main Qwen sampler.
+- `OLabVis · Qwen Analyzer Prompt` provides the controlled JSON-only analysis prompt.
+- `OLabVis · Qwen Material Analyzer` validates/normalizes TextGenerate output and exposes one SAM3-ready material region at a time.
+- SAM3 remains the pixel segmentation/refinement stage.
+- `OLabVis · Material ID Builder` converts SAM masks into exact flat RGB pseudo Material ID + serializable palette.
+- Overlap arbitration in Material ID Builder v0.1 is deterministic: earlier slots win. Put more specific masks first.
+- Existing `OLabVis · Qwen Material Region Map` remains a fallback normalizer for already-generated flat/semantic images; it is not the preferred pre-sampler route.
+- First runtime checkpoint is Qwen3-VL TextGenerate → Qwen Material Analyzer. Do not add SAM3 until the JSON/material plan checkpoint passes.
