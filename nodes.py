@@ -6,6 +6,7 @@ import uuid
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from PIL import Image
 
 import folder_paths
@@ -455,12 +456,19 @@ class ARCHVIZQwenMaterialRegionMap:
             raise ValueError(
                 f"Source and Qwen map batch size must match, got {source.shape[0]} vs {generated.shape[0]}"
             )
-        if source.shape[1:3] != generated.shape[1:3]:
-            raise ValueError(
-                "Source and Qwen map resolution must match before ARCHVIZ · Qwen Material Region Map"
-            )
 
         device = source.device
+        source_h, source_w = int(source.shape[1]), int(source.shape[2])
+        analysis_h, analysis_w = int(generated.shape[1]), int(generated.shape[2])
+
+        source_analysis = source
+        if (source_h, source_w) != (analysis_h, analysis_w):
+            source_analysis = F.interpolate(
+                source.permute(0, 3, 1, 2),
+                size=(analysis_h, analysis_w),
+                mode="bilinear",
+                align_corners=False,
+            ).permute(0, 2, 3, 1)
         id_images = []
         edge_images = []
         palettes = []
@@ -468,7 +476,7 @@ class ARCHVIZQwenMaterialRegionMap:
         counts = []
 
         for batch_index in range(source.shape[0]):
-            source_np = source[batch_index].detach().cpu().numpy()
+            source_np = source_analysis[batch_index].detach().cpu().numpy()
             qwen_np = generated[batch_index].detach().cpu().numpy()
 
             id_np, edge_np, palette_json, actual_count = build_qwen_material_region_map(
@@ -482,6 +490,20 @@ class ARCHVIZQwenMaterialRegionMap:
 
             id_t = torch.from_numpy(id_np).to(device=device, dtype=torch.float32)
             edge_t = torch.from_numpy(edge_np).to(device=device, dtype=torch.float32)
+
+            if (analysis_h, analysis_w) != (source_h, source_w):
+                id_t = F.interpolate(
+                    id_t.permute(2, 0, 1).unsqueeze(0),
+                    size=(source_h, source_w),
+                    mode="nearest",
+                ).squeeze(0).permute(1, 2, 0)
+                edge_t = F.interpolate(
+                    edge_t.unsqueeze(0).unsqueeze(0),
+                    size=(source_h, source_w),
+                    mode="bilinear",
+                    align_corners=False,
+                ).squeeze(0).squeeze(0)
+
             edge_rgb = edge_t.unsqueeze(-1).repeat(1, 1, 3)
 
             id_images.append(id_t)
@@ -508,6 +530,8 @@ class ARCHVIZQwenMaterialRegionMap:
                     "region_count": actual_count,
                     "palette": palette,
                     "source": "qwen",
+                    "analysis_resolution": [analysis_w, analysis_h],
+                    "output_resolution": [source_w, source_h],
                 },
             },
             "result": (id_image, edge_image, palette, palette_json, actual_count),
