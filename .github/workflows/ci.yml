@@ -26,7 +26,7 @@ jobs:
         run: python -m unittest discover -s tests -v
 
       - name: Python syntax
-        run: python -m py_compile __init__.py nodes.py mask_core.py palette_core.py color_range_core.py qwen_material_region_core.py
+        run: python -m py_compile __init__.py nodes.py mask_core.py palette_core.py color_range_core.py qwen_material_region_core.py qwen_material_plan_core.py
 
       - name: JavaScript syntax
         run: |
