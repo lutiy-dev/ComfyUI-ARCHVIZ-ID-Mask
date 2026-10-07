@@ -21,6 +21,13 @@ from .color_range_core import (
     lab_chroma_gradient,
 )
 from .qwen_material_region_core import build_qwen_material_region_map
+from .qwen_material_plan_core import (
+    DEFAULT_ANALYZER_PROMPT,
+    bbox_to_pixel_json,
+    material_plan_to_json,
+    normalize_material_plan,
+    select_material_region,
+)
 
 
 def _to_rgb(image: torch.Tensor) -> torch.Tensor:
@@ -538,6 +545,142 @@ class ARCHVIZQwenMaterialRegionMap:
         }
 
 
+class OLabVisQwenMaterialAnalyzer:
+    """Validate Qwen3-VL material analysis and expose one SAM3-ready region at a time."""
+
+    CATEGORY = "OLabVis/Masking"
+    FUNCTION = "analyze"
+    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "INT")
+    RETURN_NAMES = ("plan_json", "sam_prompt", "material_name", "bbox_json", "region_count")
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "qwen_text": ("STRING", {"default": "", "multiline": True, "forceInput": True}),
+                "source_image": ("IMAGE",),
+                "region_index": ("INT", {"default": 0, "min": 0, "max": 15, "step": 1}),
+            }
+        }
+
+    def analyze(self, qwen_text: str, source_image: torch.Tensor, region_index: int):
+        plan = normalize_material_plan(qwen_text)
+        region = select_material_region(plan, region_index)
+        rgb = _to_rgb(source_image)
+        height = int(rgb.shape[1])
+        width = int(rgb.shape[2])
+        bbox_json = bbox_to_pixel_json(region, width, height)
+        return (
+            material_plan_to_json(plan),
+            region["sam_prompt"],
+            region["name"],
+            bbox_json,
+            len(plan["regions"]),
+        )
+
+
+class OLabVisQwenAnalyzerPrompt:
+    """Provide the controlled Qwen3-VL prompt for material analysis before the main sampler."""
+
+    CATEGORY = "OLabVis/Masking"
+    FUNCTION = "prompt"
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("prompt",)
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {}}
+
+    def prompt(self):
+        return (DEFAULT_ANALYZER_PROMPT,)
+
+
+class OLabVisMaterialIDBuilder:
+    """Compose up to eight SAM masks into a deterministic pseudo Material ID image."""
+
+    CATEGORY = "OLabVis/Masking"
+    FUNCTION = "build"
+    RETURN_TYPES = ("IMAGE", "ARCHVIZ_ID_PALETTE", "STRING", "INT")
+    RETURN_NAMES = ("id_image", "palette", "palette_json", "region_count")
+    OUTPUT_NODE = True
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        required = {
+            "source_image": ("IMAGE",),
+            "name_1": ("STRING", {"default": "Material 1"}),
+        }
+        optional = {"mask_1": ("MASK",)}
+        for index in range(2, 9):
+            optional[f"mask_{index}"] = ("MASK",)
+            optional[f"name_{index}"] = ("STRING", {"default": f"Material {index}"})
+        return {"required": required, "optional": optional}
+
+    def build(self, source_image: torch.Tensor, name_1: str, mask_1=None, **kwargs):
+        source = _to_rgb(source_image)
+        if source.shape[0] != 1:
+            raise ValueError("OLabVis · Material ID Builder v0.1 supports batch size 1")
+
+        height, width = int(source.shape[1]), int(source.shape[2])
+        device = source.device
+        slots = [(mask_1, name_1)]
+        for index in range(2, 9):
+            slots.append((kwargs.get(f"mask_{index}"), kwargs.get(f"name_{index}", f"Material {index}")))
+
+        active = []
+        for mask, name in slots:
+            if mask is None:
+                continue
+            m = mask.to(device=device, dtype=torch.float32)
+            if m.ndim == 2:
+                m = m.unsqueeze(0)
+            if m.ndim != 3:
+                raise ValueError("MASK input must have shape [B,H,W] or [H,W]")
+            if m.shape[0] != 1:
+                raise ValueError("Material ID Builder expects one mask per slot")
+            if (int(m.shape[1]), int(m.shape[2])) != (height, width):
+                m = F.interpolate(m.unsqueeze(1), size=(height, width), mode="nearest").squeeze(1)
+            active.append((m[0] > 0.5, str(name or "Material").strip()[:120]))
+
+        if not active:
+            raise ValueError("Connect at least one SAM mask to Material ID Builder")
+
+        colors = [
+            [230, 25, 75], [60, 180, 75], [255, 225, 25], [0, 130, 200],
+            [245, 130, 48], [145, 30, 180], [70, 240, 240], [240, 50, 230],
+        ]
+        id_image = torch.zeros((height, width, 3), dtype=torch.float32, device=device)
+        occupied = torch.zeros((height, width), dtype=torch.bool, device=device)
+        palette_colors = []
+
+        for index, (mask, name) in enumerate(active):
+            # Slot order is deterministic overlap arbitration: earlier/more-specific slots win.
+            effective = mask & ~occupied
+            rgb8 = colors[index]
+            rgb = torch.tensor(rgb8, dtype=torch.float32, device=device) / 255.0
+            id_image[effective] = rgb
+            occupied |= mask
+            palette_colors.append({
+                "id": f"material-{index + 1:02d}",
+                "name": name,
+                "rgb": rgb8,
+            })
+
+        palette = normalize_palette({"version": 1, "colors": palette_colors})
+        palette_json = json.dumps(palette, ensure_ascii=False, separators=(",", ":"))
+        batched = id_image.unsqueeze(0)
+        return {
+            "ui": {
+                "images": _save_ui_preview(batched, "olabvis_material_id"),
+                "olabvis_material_id": {
+                    "region_count": len(active),
+                    "overlap_rule": "earlier slot wins",
+                },
+            },
+            "result": (batched, palette, palette_json, len(active)),
+        }
+
+
 NODE_CLASS_MAPPINGS = {
     "ARCHVIZIDColorPickerMask": ARCHVIZIDColorPickerMask,
     "ARCHVIZIDPalettePicker": ARCHVIZIDPalettePicker,
@@ -545,6 +688,9 @@ NODE_CLASS_MAPPINGS = {
     "ARCHVIZIDGroupMask": ARCHVIZIDGroupMask,
     "ARCHVIZColorRangeMask": ARCHVIZColorRangeMask,
     "ARCHVIZQwenMaterialRegionMap": ARCHVIZQwenMaterialRegionMap,
+    "OLabVisQwenAnalyzerPrompt": OLabVisQwenAnalyzerPrompt,
+    "OLabVisQwenMaterialAnalyzer": OLabVisQwenMaterialAnalyzer,
+    "OLabVisMaterialIDBuilder": OLabVisMaterialIDBuilder,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -554,4 +700,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ARCHVIZIDGroupMask": "OLabVis · ID Group Mask",
     "ARCHVIZColorRangeMask": "OLabVis · Color Range Mask",
     "ARCHVIZQwenMaterialRegionMap": "OLabVis · Qwen Material Region Map",
+    "OLabVisQwenAnalyzerPrompt": "OLabVis · Qwen Analyzer Prompt",
+    "OLabVisQwenMaterialAnalyzer": "OLabVis · Qwen Material Analyzer",
+    "OLabVisMaterialIDBuilder": "OLabVis · Material ID Builder",
 }
