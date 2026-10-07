@@ -9,6 +9,7 @@ Current nodes:
 - `ARCHVIZ · Mask From Palette` — one palette slot → one mask.
 - `ARCHVIZ · ID Group Mask` — union multiple palette slots into one semantic mask.
 - `ARCHVIZ · Color Range Mask` — beauty-image rough masking using adaptive LAB+HSV similarity, Connected selection, channel assistance, and LAB chroma boundary diagnostics.
+- `ARCHVIZ · Qwen Material Region Map` — stabilizes a Qwen-generated semantic/material map into deterministic flat-color pseudo Material ID regions for downstream palette and mask nodes.
 
 ## Production invariants
 - Color ID / Material ID / Object ID is the geometry truth source.
@@ -62,3 +63,14 @@ Goal: minimize manual testing time while preserving evidence and reproducibility
 - Random Walker, SAM, HED, PiDiNet, DexiNed, M-LSD, Depth and Normals are not required dependencies for the first prototype.
 - Preserve diagnostic outputs (confidence and edge map) so failures can be localized before adding more algorithms.
 - Do not promote the Color Range node beyond LAB/ALPHA until real ComfyUI runtime tests and graph integration pass.
+
+
+## Qwen Material Region Map v0.1 rules
+- Qwen is an upstream semantic/material-map generator; this custom node does not embed or replace the Qwen model runtime.
+- Input contract: original beauty/source IMAGE + Qwen-produced material/semantic IMAGE.
+- Output contract: deterministic flat-color ID IMAGE + ARCHVIZ_ID_PALETTE + palette JSON + edge diagnostic.
+- Canonical output colors must be exact and stable so existing Palette / Mask From Palette / Group Mask nodes can consume them deterministically.
+- Qwen output may be lower resolution than the source; analyze at Qwen resolution and return the final ID map at source resolution.
+- Source-image LAB Chroma Gradient protects strong material boundaries during cleanup.
+- Do not claim the pseudo map is scene truth. Exact Material/Object/Color ID passes remain higher-confidence inputs when available.
+- No Flux integration in v0.1. Flux-specific support is a separate future extension and must not alter the Qwen baseline.
