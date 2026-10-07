@@ -5,7 +5,10 @@ from collections import deque
 
 import numpy as np
 
-from color_range_core import lab_chroma_gradient
+try:
+    from .color_range_core import lab_chroma_gradient
+except ImportError:  # repository-level tests
+    from color_range_core import lab_chroma_gradient
 
 
 CANONICAL_ID_COLORS = np.asarray(
