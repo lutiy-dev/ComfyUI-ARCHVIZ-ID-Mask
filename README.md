@@ -18,7 +18,7 @@ The core production idea:
 Color / Material / Object ID pass
               │
               ▼
-ARCHVIZ · ID Palette Picker
+OLabVis · ID Palette Picker
               │
         ARCHVIZ_ID_PALETTE
               │
@@ -32,15 +32,91 @@ Mask From Palette   ID Group Mask
 
 No VLM, SAM, GroundingDINO or semantic segmentation is required when the 3D scene already provides exact IDs.
 
+
+> **Qwen pseudo-ID branch:** `feat/qwen-material-region-map-v0.1` adds an optional fallback path for scenes that do **not** have a real Material/Object/Color ID pass. Exact scene ID remains preferred when available.
+
+### OLabVis · Qwen Material Region Map — LAB / ALPHA
+
+This node converts a Qwen-generated material/semantic map into a deterministic flat-color pseudo Material ID that the existing toolkit can consume.
+
+Production concept:
+
+```text
+BEAUTY RENDER
+     │
+     ├──────────────→ source_image
+     │
+     └→ Qwen image-edit / segmentation-style pass
+                         │
+                         ▼
+                 qwen_map IMAGE
+                         │
+                         ▼
+          OLabVis · Qwen Material Region Map
+                         │
+             ┌───────────┴────────────┐
+             ▼                        ▼
+        flat ID IMAGE          generated palette
+             │
+             ▼
+      ID Palette Picker
+             │
+      name / group regions
+             │
+     Mask From Palette / Group Mask
+```
+
+The node does **not** pretend to reconstruct true 3D material metadata. It creates a production-oriented **pseudo Material ID / Material Region Map** when no exact ID pass exists.
+
+Inputs:
+- `source_image` — original beauty render, used for boundary protection;
+- `qwen_map` — Qwen-generated semantic/material-region image;
+- `region_count` — target number of flat regions, default 12;
+- `qwen_smoothing` — suppress small generated color noise;
+- `cleanup_passes` — majority cleanup of flat regions;
+- `edge_protect` — protects strong LAB chroma boundaries from cleanup spill.
+
+Outputs:
+- `id_image` — exact flat canonical RGB regions;
+- `edge_map` — LAB Chroma Gradient diagnostic;
+- `palette` — `ARCHVIZ_ID_PALETTE` for direct downstream use;
+- `palette_json` — serialized diagnostic palette;
+- `region_count` — actual number of used regions.
+
+If Qwen runs at lower resolution than the beauty render, the node analyzes at Qwen resolution and returns the final ID image at source resolution.
+
+Recommended Qwen instruction for the first test:
+
+```text
+Convert this architectural render into a flat material-region ID map.
+Preserve the exact camera, silhouette, openings and object boundaries.
+Assign one solid flat color to each visually distinct material/surface class:
+each facade material, glazing/windows, roof, metal, wood, pavement, road,
+curb, vegetation, sky, water and people when present.
+Use the same color for the same material across light and shadow.
+Use clearly different colors for different materials.
+No texture, lighting, shadows, gradients, reflections, outlines, labels or text.
+Output only the flat material-region map.
+```
+
+Qwen is used as the semantic/material grouping stage. The custom node then removes generated color drift and converts the result into stable exact IDs. Flux is intentionally not part of this v0.1 branch.
+
+
+Acceptance workflow:
+
+`example_workflows/ARCHVIZ_QWEN_MATERIAL_REGION_MAP_v0.1.json`
+
+For the first test, save one Qwen material-map output as `qwen_material_map.png`, load it together with the original beauty render, and verify that the node returns a stable flat-color ID image. The generated `palette` can feed `Mask From Palette` directly; `id_image` can also be routed into `ID Palette Picker` when manual naming/curation is preferred.
+
 ## Nodes
 
-### ARCHVIZ · ID Color Picker Mask
+### OLabVis · ID Color Picker Mask
 
 Quick mode: one clicked RGB color → one deterministic binary mask.
 
 Use when you only need one surface.
 
-### ARCHVIZ · ID Palette Picker
+### OLabVis · ID Palette Picker
 
 Production mode palette builder.
 
@@ -75,7 +151,7 @@ The serialized palette widget is the workflow truth source. Browser-only state i
 
 The picker and backend intentionally operate in the same **8-bit RGB domain (0..255)**. This keeps the clicked preview color and backend exact-match behavior deterministic, including when an upstream image originally had higher channel precision.
 
-### ARCHVIZ · Mask From Palette
+### OLabVis · Mask From Palette
 
 Takes:
 
@@ -97,7 +173,7 @@ HEX
 
 Use multiple copies for Road, Greenery, Windows, etc.
 
-### ARCHVIZ · ID Group Mask
+### OLabVis · ID Group Mask
 
 Unions several palette slots into one semantic mask.
 
@@ -174,7 +250,7 @@ Restart ComfyUI.
 Nodes are under:
 
 ```text
-ARCHVIZ / Masking
+OLabVis / Masking
 ```
 
 This branch has passed synthetic and real-scene ComfyUI runtime validation. Final integration into the full production material workflow is still pending before release/registry publication.
@@ -194,7 +270,7 @@ The graph is prewired as:
 ```text
 Load Image
     ↓
-ARCHVIZ · ID Palette Picker
+OLabVis · ID Palette Picker
     ├─ Mask From Palette → Road → Preview
     ├─ Mask From Palette → Greenery → Preview
     └─ ID Group Mask → Facade → Preview
@@ -250,7 +326,7 @@ The workflow JSON and toolkit have passed real ComfyUI runtime validation on the
 
 ```bash
 python -m unittest discover -s tests -v
-python -m py_compile __init__.py nodes.py mask_core.py palette_core.py
+python -m py_compile __init__.py nodes.py mask_core.py palette_core.py color_range_core.py qwen_material_region_core.py
 node --check web/id_color_picker.js
 node --check web/id_palette_system.js
 ```
@@ -297,3 +373,69 @@ The following runtime acceptance matrix is used for release gating:
 Current release gate: **PRODUCTION CANDIDATE**.
 
 The included stress-test workflow remains the reproducible public example. The next milestone is integration into the main production workflow, followed by release/registry preparation.
+
+
+## Qwen pre-sampler Material ID path — LAB / ALPHA
+
+The preferred Qwen masking architecture now runs **before** the main material-edit sampler:
+
+```text
+Beauty IMAGE
+   │
+   ├─ Qwen3-VL / Generate Text
+   │       │
+   │       ▼
+   │  OLabVis · Qwen Material Analyzer
+   │       │
+   │       ▼
+   │    material plan
+   │       │
+   │       ▼
+   │     SAM3
+   │       │
+   │       ▼
+   │  OLabVis · Material ID Builder
+   │       │
+   │       ├─ flat RGB pseudo Material ID
+   │       └─ ARCHVIZ_ID_PALETTE
+   │
+   └────────────────────────────→ main Qwen Image 2.1 material-edit sampler
+                                   using the selected MASK
+```
+
+Important: the Qwen diffusion `MODEL` socket is not a semantic/mask output. Scene understanding is performed by the Qwen3-VL vision/text path before sampling.
+
+### New nodes
+
+**`OLabVis · Qwen Analyzer Prompt`**
+- outputs the controlled JSON-only Qwen3-VL analysis prompt.
+
+**`OLabVis · Qwen Material Analyzer`**
+- input: TextGenerate output + source IMAGE;
+- validates/normalizes the Qwen material plan;
+- outputs: normalized plan JSON, selected `sam_prompt`, material name, bbox diagnostic and region count;
+- `region_index` lets you inspect one detected material region at a time.
+
+**`OLabVis · Material ID Builder`**
+- accepts up to eight SAM masks;
+- assigns deterministic exact RGB IDs;
+- outputs flat ID IMAGE + `ARCHVIZ_ID_PALETTE`;
+- overlap rule v0.1: earlier slots win, so put specific masks (glass/frame/curb) before generic masks (facade/road).
+
+### First runtime checkpoint
+
+Test only this first:
+
+```text
+Qwen3-VL CLIP + Beauty IMAGE
+        ↓
+ComfyUI Generate Text
+        ↓
+OLabVis · Qwen Material Analyzer
+        ↓
+plan_json / sam_prompt / material_name
+```
+
+Do **not** connect SAM3 until this checkpoint returns a valid material plan. This follows the project Checkpoint Workflow and isolates Qwen analysis from segmentation errors.
+
+The older **`OLabVis · Qwen Material Region Map`** is kept as a fallback for workflows that already produce a generated semantic/flat map image.

@@ -117,7 +117,7 @@ function makeId() {
 function createPaletteUi(node) {
   hideWidget(node, "palette_json");
   const root = document.createElement("div");
-  root.style.cssText = "display:flex;flex-direction:column;gap:8px;background:#111;color:#ddd;padding:8px;box-sizing:border-box;font:12px sans-serif;height:100%;";
+  root.style.cssText = "display:flex;flex-direction:column;gap:8px;background:#111;color:#ddd;padding:8px;box-sizing:border-box;font:12px sans-serif;width:100%;height:100%;min-height:0;overflow:hidden;";
 
   const add = document.createElement("button");
   add.textContent = "+ ADD COLOR";
@@ -128,10 +128,10 @@ function createPaletteUi(node) {
   status.textContent = "Queue once, then add a color and click the ID preview.";
 
   const canvas = document.createElement("canvas");
-  canvas.style.cssText = "width:100%;height:auto;max-height:330px;background:#080808;border:1px solid #333;cursor:crosshair;";
+  canvas.style.cssText = "display:block;flex:0 1 auto;width:100%;height:auto;max-height:330px;background:#080808;border:1px solid #333;cursor:crosshair;box-sizing:border-box;";
 
   const list = document.createElement("div");
-  list.style.cssText = "display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto;";
+  list.style.cssText = "display:flex;flex:1 1 auto;flex-direction:column;gap:6px;min-height:120px;overflow:auto;";
 
   root.append(add, status, canvas, list);
   let activeId = null;
